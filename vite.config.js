@@ -4,8 +4,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        admin: 'public/index.html',
-        client: 'public/client.html',
+        admin: 'public/index.html',     // para /
+        client: 'public/client.html',   // para /client
       },
     },
     outDir: 'dist',

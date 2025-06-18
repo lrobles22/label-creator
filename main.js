@@ -10,6 +10,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/cliente" element={<ClientDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="*" element={<ClientDashboard />} />
       </Routes>
     </Router>
   </React.StrictMode>

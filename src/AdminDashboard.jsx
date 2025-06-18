@@ -1,73 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
-
-const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbz1TBCIkrZO0Kr0IUn9KaexLQTxHbU2kiUV4QoTkUKfCxxcZDjbVlMEPe3ZNvHhBlfa/exec';
-const ACTUALIZAR_ORDEN_API = 'https://script.google.com/macros/s/AKfycbwiTVxHGom_JW7PJkEhbQ79QedtNreVxlmGirY72MSpqmq0DSu3fD4IV9PztzJ-TE3V/exec';
+import { supabase } from './supabaseClient';
 
 function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('Todos');
   const [editStatus, setEditStatus] = useState({});
   const [editNote, setEditNote] = useState({});
+  const isEditing = useRef(false);
+
+  const fetchOrders = async () => {
+    if (isEditing.current) return;
+    const { data, error } = await supabase.from('Orders').select('*');
+    if (!error) setOrders(data);
+  };
 
   useEffect(() => {
-    fetch(GOOGLE_SHEET_API)
-      .then(res => res.json())
-      .then(data => {
-        const formatted = data.map((item, index) => ({
-          id: parseInt(item.ID) || index + 1,
-          orderNumber: item.OrderNumber,
-          customerName: item.CustomerName,
-          address: item.Address,
-          orderDetails: item.OrderDetails,
-          date: item.Date,
-          time: item.Time,
-          ghStatus: item.GHStatus,
-          trottaStatus: item.TrottaStatus,
-          note: item.Note,
-          payment: item.Payment,
-          unitPrice: parseFloat(item.UnitPrice) || 0,
-          labelsCount: parseInt(item.LabelsCount) || 0,
-          labels: []
-        }));
-        setOrders(formatted);
-      })
-      .catch(err => console.error('❌ Error al cargar datos desde Google Sheets:', err));
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 2000);
+    return () => clearInterval(interval);
   }, []);
 
-  const guardarEnSheet = (order) => {
-    fetch(ACTUALIZAR_ORDEN_API, {
-      method: "POST",
-      body: JSON.stringify({
-        OrderNumber: String(order.orderNumber).trim(),
-        CustomerName: order.customerName,
-        Address: order.address,
-        OrderDetails: order.orderDetails,
-        Date: order.date,
-        Time: order.time,
-        GHStatus: order.ghStatus,
-        TrottaStatus: order.trottaStatus,
-        Note: order.note,
-        Payment: order.payment,
-        UnitPrice: order.unitPrice,
-        LabelsCount: order.labels?.length || 0
-      }),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-      .then(res => res.text())
-      .then(txt => {
-        console.log("✅ Respuesta Apps Script:", txt);
-        alert(`✅ Cambios guardados para la orden ${order.orderNumber}`);
+  const guardarEnSupabase = async (order) => {
+    const { error } = await supabase
+      .from('Orders')
+      .update({
+        ghStatus: order.ghStatus,
+        trottaStatus: order.trottaStatus,
+        note: order.note,
+        payment: order.payment,
+        unitPrice: order.unitPrice,
+        labelsCount: order.labels?.length || 0
       })
-      .catch(err => {
-        console.error("❌ Error al guardar en Sheets:", err);
-        alert(`❌ Error al guardar cambios para la orden ${order.orderNumber}`);
-      });
+      .eq('id', order.id);
+
+    if (!error) fetchOrders();
   };
 
   const handleStatusChange = (id, newStatus) => {
+    isEditing.current = true;
     setOrders(prev =>
       prev.map(order =>
         order.id === id ? { ...order, ghStatus: newStatus } : order
@@ -78,10 +49,12 @@ function AdminDashboard() {
   const handleSaveStatus = (id) => {
     setEditStatus(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
-    guardarEnSheet(order);
+    guardarEnSupabase(order);
+    isEditing.current = false;
   };
 
   const handleNoteChange = (id, note) => {
+    isEditing.current = true;
     setOrders(prev =>
       prev.map(order =>
         order.id === id ? { ...order, note } : order
@@ -92,21 +65,19 @@ function AdminDashboard() {
   const handleSaveNote = (id) => {
     setEditNote(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
-    guardarEnSheet(order);
+    guardarEnSupabase(order);
+    isEditing.current = false;
   };
 
   const handleFileUpload = (id, event) => {
     const files = event.target.files;
     if (!files.length) return;
-
     const readers = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       readers.push(new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve({ name: file.name, data: e.target.result });
-        };
+        reader.onload = (e) => resolve({ name: file.name, data: e.target.result });
         reader.readAsDataURL(file);
       }));
     }
@@ -156,7 +127,6 @@ function AdminDashboard() {
 
       <div className="main-content">
         <h1>GH Tire House - Panel de Administración</h1>
-
         <div className="filter-bar">
           <label>Filtrar por estado:</label>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -228,9 +198,9 @@ function AdminDashboard() {
                 <td>
                   <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(order.id, e)} multiple />
                   <div>
-                    {order.labels && order.labels.length > 0 ? (
-                      order.labels.map((label, index) => (
-                        <div key={index}>
+                    {order.labels?.length > 0 ? (
+                      order.labels.map((label, i) => (
+                        <div key={i}>
                           <a href={label.data} download={label.name} target="_blank" rel="noopener noreferrer">
                             📥 {label.name}
                           </a>

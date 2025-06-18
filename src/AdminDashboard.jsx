@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './styles.css';
 import { supabase } from './supabaseClient';
 
@@ -7,18 +7,41 @@ function AdminDashboard() {
   const [filter, setFilter] = useState('Todos');
   const [editStatus, setEditStatus] = useState({});
   const [editNote, setEditNote] = useState({});
-  const isEditing = useRef(false);
 
   const fetchOrders = async () => {
-    if (isEditing.current) return;
     const { data, error } = await supabase.from('Orders').select('*');
-    if (!error) setOrders(data);
+    if (error) {
+      console.error('❌ Error al cargar datos desde Supabase:', error);
+    } else {
+      setOrders(data);
+    }
   };
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 2000);
-    return () => clearInterval(interval);
+
+    // 🟡 Refrescar cada 2 segundos
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 2000);
+
+    // 🔴 Suscripción Realtime (si funciona)
+    const channel = supabase
+      .channel('realtime:orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'Orders' },
+        (payload) => {
+          console.log('🟡 Cambio detectado vía Realtime:', payload);
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const guardarEnSupabase = async (order) => {
@@ -34,11 +57,14 @@ function AdminDashboard() {
       })
       .eq('id', order.id);
 
-    if (!error) fetchOrders();
+    if (error) {
+      console.error('❌ Error al guardar en Supabase:', error);
+    } else {
+      console.log('✅ Orden actualizada en Supabase:', order.id);
+    }
   };
 
   const handleStatusChange = (id, newStatus) => {
-    isEditing.current = true;
     setOrders(prev =>
       prev.map(order =>
         order.id === id ? { ...order, ghStatus: newStatus } : order
@@ -50,11 +76,9 @@ function AdminDashboard() {
     setEditStatus(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
     guardarEnSupabase(order);
-    isEditing.current = false;
   };
 
   const handleNoteChange = (id, note) => {
-    isEditing.current = true;
     setOrders(prev =>
       prev.map(order =>
         order.id === id ? { ...order, note } : order
@@ -66,18 +90,20 @@ function AdminDashboard() {
     setEditNote(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
     guardarEnSupabase(order);
-    isEditing.current = false;
   };
 
   const handleFileUpload = (id, event) => {
     const files = event.target.files;
     if (!files.length) return;
+
     const readers = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       readers.push(new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => resolve({ name: file.name, data: e.target.result });
+        reader.onload = (e) => {
+          resolve({ name: file.name, data: e.target.result });
+        };
         reader.readAsDataURL(file);
       }));
     }
@@ -127,6 +153,7 @@ function AdminDashboard() {
 
       <div className="main-content">
         <h1>GH Tire House - Panel de Administración</h1>
+
         <div className="filter-bar">
           <label>Filtrar por estado:</label>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -198,9 +225,9 @@ function AdminDashboard() {
                 <td>
                   <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(order.id, e)} multiple />
                   <div>
-                    {order.labels?.length > 0 ? (
-                      order.labels.map((label, i) => (
-                        <div key={i}>
+                    {order.labels && order.labels.length > 0 ? (
+                      order.labels.map((label, index) => (
+                        <div key={index}>
                           <a href={label.data} download={label.name} target="_blank" rel="noopener noreferrer">
                             📥 {label.name}
                           </a>

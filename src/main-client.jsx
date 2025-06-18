@@ -1,10 +1,19 @@
-// main-client.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import ClientDashboard from './ClientDashboard';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ClientDashboard from './ClientDashboard.jsx';
+import AdminDashboard from './AdminDashboard.jsx';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+
+root.render(
   <React.StrictMode>
-    <ClientDashboard />
+    <Router>
+      <Routes>
+        <Route path="/cliente" element={<ClientDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="*" element={<ClientDashboard />} />
+      </Routes>
+    </Router>
   </React.StrictMode>
 );

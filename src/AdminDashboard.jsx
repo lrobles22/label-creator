@@ -39,7 +39,6 @@ function AdminDashboard() {
     fetch(ACTUALIZAR_ORDEN_API, {
       method: "POST",
       body: JSON.stringify({
-        ID: order.id,
         OrderNumber: String(order.orderNumber).trim(),
         CustomerName: order.customerName,
         Address: order.address,
@@ -58,8 +57,14 @@ function AdminDashboard() {
       }
     })
       .then(res => res.text())
-      .then(txt => console.log("✅ Respuesta Apps Script:", txt))
-      .catch(err => console.error("❌ Error al guardar en Sheets:", err));
+      .then(txt => {
+        console.log("✅ Respuesta Apps Script:", txt);
+        alert(`✅ Cambios guardados para la orden ${order.orderNumber}`);
+      })
+      .catch(err => {
+        console.error("❌ Error al guardar en Sheets:", err);
+        alert(`❌ Error al guardar cambios para la orden ${order.orderNumber}`);
+      });
   };
 
   const handleStatusChange = (id, newStatus) => {

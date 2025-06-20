@@ -7,52 +7,55 @@ function AdminDashboard() {
   const [filter, setFilter] = useState('Todos');
   const [editStatus, setEditStatus] = useState({});
   const [editNote, setEditNote] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
 
   const fetchOrders = async () => {
-    const { data, error } = await supabase.from('Orders').select('*');
+    const { data, error } = await supabase.from('orders').select('*');
     if (error) {
       console.error('❌ Error al cargar datos desde Supabase:', error);
     } else {
-      setOrders(data);
+      const enrichedData = data.map(order => ({
+        ...order,
+        labels: order.labels ? JSON.parse(order.labels) : []
+      }));
+      setOrders(enrichedData);
     }
   };
 
   useEffect(() => {
     fetchOrders();
 
-    // 🟡 Refrescar cada 2 segundos
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 2000);
-
-    // 🔴 Suscripción Realtime (si funciona)
     const channel = supabase
-      .channel('realtime:orders')
+      .channel('orders-updates')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'Orders' },
-        (payload) => {
-          console.log('🟡 Cambio detectado vía Realtime:', payload);
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        async (payload) => {
+          console.log('📡 Realtime event recibido:', payload);
           fetchOrders();
         }
       )
       .subscribe();
 
     return () => {
-      clearInterval(interval);
       supabase.removeChannel(channel);
     };
   }, []);
 
   const guardarEnSupabase = async (order) => {
     const { error } = await supabase
-      .from('Orders')
+      .from('orders')
       .update({
         ghStatus: order.ghStatus,
         trottaStatus: order.trottaStatus,
         note: order.note,
         payment: order.payment,
         unitPrice: order.unitPrice,
+        labels: order.labels ? JSON.stringify(order.labels) : null,
         labelsCount: order.labels?.length || 0
       })
       .eq('id', order.id);
@@ -70,12 +73,14 @@ function AdminDashboard() {
         order.id === id ? { ...order, ghStatus: newStatus } : order
       )
     );
+    setIsEditing(true);
   };
 
   const handleSaveStatus = (id) => {
     setEditStatus(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
     guardarEnSupabase(order);
+    setIsEditing(false);
   };
 
   const handleNoteChange = (id, note) => {
@@ -90,6 +95,7 @@ function AdminDashboard() {
     setEditNote(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
     guardarEnSupabase(order);
+    setIsEditing(false);
   };
 
   const handleFileUpload = (id, event) => {
@@ -131,8 +137,8 @@ function AdminDashboard() {
   };
 
   const getTotalPrice = (details, unitPrice) => {
-    const match = details.match(/^(\d+)x/);
-    const qty = match ? parseInt(match[1]) : 1;
+    const match = details.match(/^\d+/);
+    const qty = match ? parseInt(match[0]) : 1;
     return qty * unitPrice;
   };
 
@@ -212,12 +218,19 @@ function AdminDashboard() {
                   <textarea
                     value={order.note}
                     onChange={(e) => handleNoteChange(order.id, e.target.value)}
-                    onDoubleClick={() => setEditNote(prev => ({ ...prev, [order.id]: true }))}
                     disabled={!editNote[order.id]}
                     rows={2}
                     style={{ width: '100%' }}
                   />
-                  <button onClick={() => editNote[order.id] ? handleSaveNote(order.id) : setEditNote(prev => ({ ...prev, [order.id]: true }))}>
+                  <button
+                    onClick={() => {
+                      if (editNote[order.id]) {
+                        handleSaveNote(order.id);
+                      } else {
+                        setEditNote(prev => ({ ...prev, [order.id]: true }));
+                      }
+                    }}
+                  >
                     {editNote[order.id] ? 'Guardar' : 'Editar'}
                   </button>
                 </td>
@@ -229,7 +242,7 @@ function AdminDashboard() {
                       order.labels.map((label, index) => (
                         <div key={index}>
                           <a href={label.data} download={label.name} target="_blank" rel="noopener noreferrer">
-                            📥 {label.name}
+                            📅 {label.name}
                           </a>
                         </div>
                       ))

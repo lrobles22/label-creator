@@ -25,76 +25,84 @@ function AdminDashboard() {
   useEffect(() => {
     fetchOrders();
 
-    const channel = supabase
-      .channel('orders-updates')
+    // 🔔 SUSCRIPCIÓN REALTIME
+    const subscription = supabase
+      .channel('orders_changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-        },
-        async (payload) => {
-          console.log('📡 Realtime event recibido:', payload);
+        { event: '*', schema: 'public', table: 'orders' },
+        payload => {
+          console.log('📥 Cambio recibido en tiempo real:', payload);
           fetchOrders();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(subscription);
     };
   }, []);
 
   const guardarEnSupabase = async (order) => {
+    const payload = {
+      ghStatus: order.ghStatus,
+      trottaStatus: order.trottaStatus,
+      note: order.note,
+      payment: order.payment,
+      unitPrice: order.unitPrice,
+      labelsCount: order.labels?.length || 0
+    };
+
+    console.log(`📤 Intentando actualizar orden ID ${order.id}...`);
+    console.log('📦 Payload a enviar a Supabase:', payload);
+
     const { error } = await supabase
       .from('orders')
-      .update({
-        ghStatus: order.ghStatus,
-        trottaStatus: order.trottaStatus,
-        note: order.note,
-        payment: order.payment,
-        unitPrice: order.unitPrice,
-        labels: order.labels ? JSON.stringify(order.labels) : null,
-        labelsCount: order.labels?.length || 0
-      })
+      .update(payload)
       .eq('id', order.id);
 
     if (error) {
-      console.error('❌ Error al guardar en Supabase:', error);
+      console.error(`❌ ERROR al guardar orden ID ${order.id}:`, error);
     } else {
-      console.log('✅ Orden actualizada en Supabase:', order.id);
+      console.log(`✅ Orden ID ${order.id} actualizada correctamente`);
     }
   };
 
-  const handleStatusChange = (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus) => {
     setOrders(prev =>
       prev.map(order =>
         order.id === id ? { ...order, ghStatus: newStatus } : order
       )
     );
-    setIsEditing(true);
-  };
 
-  const handleSaveStatus = (id) => {
-    setEditStatus(prev => ({ ...prev, [id]: false }));
     const order = orders.find(o => o.id === id);
-    guardarEnSupabase(order);
-    setIsEditing(false);
+    if (order) {
+      order.ghStatus = newStatus;
+      await guardarEnSupabase(order);
+    }
   };
 
-  const handleNoteChange = (id, note) => {
+  const handleNoteChange = async (id, note) => {
     setOrders(prev =>
       prev.map(order =>
         order.id === id ? { ...order, note } : order
       )
     );
+
+    const order = orders.find(o => o.id === id);
+    if (order) {
+      order.note = note;
+      await guardarEnSupabase(order);
+    }
+  };
+
+  const handleSaveStatus = (id) => {
+    setEditStatus(prev => ({ ...prev, [id]: false }));
+    setIsEditing(false);
   };
 
   const handleSaveNote = (id) => {
     setEditNote(prev => ({ ...prev, [id]: false }));
-    const order = orders.find(o => o.id === id);
-    guardarEnSupabase(order);
     setIsEditing(false);
   };
 
@@ -119,7 +127,9 @@ function AdminDashboard() {
         prev.map(order => {
           if (order.id === id) {
             const combinedLabels = order.labels ? [...order.labels, ...newLabels] : newLabels;
-            return { ...order, labels: combinedLabels };
+            const updatedOrder = { ...order, labels: combinedLabels };
+            guardarEnSupabase(updatedOrder);
+            return updatedOrder;
           }
           return order;
         })
@@ -137,7 +147,7 @@ function AdminDashboard() {
   };
 
   const getTotalPrice = (details, unitPrice) => {
-    const match = details.match(/^\d+/);
+    const match = details.match(/\d+/);
     const qty = match ? parseInt(match[0]) : 1;
     return qty * unitPrice;
   };

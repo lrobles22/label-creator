@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./styles.css";
-
-const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbz1TBCIkrZO0Kr0IUn9KaexLQTxHbU2kiUV4QoTkUKfCxxcZDjbVlMEPe3ZNvHhBlfa/exec';
+import { supabase } from './supabaseClient'; // Asegúrate de tener este archivo
 
 const ClientDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -15,45 +14,34 @@ const ClientDashboard = () => {
   const dragData = useRef({ isDragging: false, originX: 0, originY: 0, translateX: 0, translateY: 0 });
 
   useEffect(() => {
-    const fetchData = () => {
-      fetch(GOOGLE_SHEET_API)
-        .then(res => res.json())
-        .then(data => {
-          if (!Array.isArray(data) || data.length === 0) {
-            console.warn("⚠️ Google Sheets devolvió datos vacíos. Se mantiene la última copia.");
-            setError(true);
-            return;
-          }
+    const fetchData = async () => {
+      const { data, error } = await supabase.from('orders').select('*');
 
-          const formatted = data.map((item, index) => ({
-            id: parseInt(item.ID) || index + 1,
-            orderNumber: item.OrderNumber,
-            customerName: item.CustomerName,
-            address: item.Address,
-            orderDetails: item.OrderDetails,
-            date: item.Date,
-            time: item.Time,
-            ghStatus: item.GHStatus,
-            trottaStatus: item.TrottaStatus,
-            note: item.Note,
-            payment: item.Payment,
-            unitPrice: parseFloat(item.UnitPrice) || 0,
-            labelsCount: parseInt(item.LabelsCount) || 0,
-            labels: (parseInt(item.LabelsCount) || 0) > 0
-              ? Array.from({ length: parseInt(item.LabelsCount) }, (_, i) => ({
-                  name: `Label_${i + 1}.pdf`,
-                  data: "" // aquí podrías cargar la base64 real si lo agregas luego
-                }))
-              : []
-          }));
+      if (error || !Array.isArray(data)) {
+        console.error("❌ Error al cargar datos desde Supabase:", error);
+        setError(true);
+        return;
+      }
 
-          setOrders(formatted);
-          setError(false);
-        })
-        .catch(err => {
-          console.error("❌ Error al cargar datos:", err);
-          setError(true);
-        });
+      const formatted = data.map((item, index) => ({
+        id: item.id ?? index + 1,
+        orderNumber: item.orderNumber,
+        customerName: item.customerName,
+        address: item.address,
+        orderDetails: item.orderDetails,
+        date: item.date,
+        time: item.time,
+        ghStatus: item.ghStatus,
+        trottaStatus: item.trottaStatus,
+        note: item.note,
+        payment: item.payment,
+        unitPrice: item.unitPrice ?? 0,
+        labelsCount: parseInt(item.labelsCount) || 0,
+        labels: item.labels ? JSON.parse(item.labels) : []
+      }));
+
+      setOrders(formatted);
+      setError(false);
     };
 
     fetchData();
@@ -145,7 +133,7 @@ const ClientDashboard = () => {
 
           {error && (
             <div style={{ backgroundColor: "#ffe0e0", color: "#a00", padding: "10px", marginBottom: "10px", borderRadius: "5px" }}>
-              ⚠️ No se pudo cargar la información desde Google Sheets. Mostrando última copia válida.
+              ⚠️ No se pudo cargar la información desde Supabase. Mostrando última copia válida.
             </div>
           )}
 
@@ -250,12 +238,10 @@ const ClientDashboard = () => {
                 const blobUrl = base64ToBlobUrl(label.data);
                 return (
                   <div key={idx}>
-                    <button
-                      onClick={() => {
-                        const win = window.open(blobUrl, "_blank");
-                        if (win) win.print();
-                      }}
-                    >
+                    <button onClick={() => {
+                      const win = window.open(blobUrl, "_blank");
+                      if (win) win.print();
+                    }}>
                       Imprimir Label {idx + 1}
                     </button>
                   </div>

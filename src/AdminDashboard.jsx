@@ -25,7 +25,6 @@ function AdminDashboard() {
   useEffect(() => {
     fetchOrders();
 
-    // 🔔 SUSCRIPCIÓN REALTIME
     const subscription = supabase
       .channel('orders_changes')
       .on(
@@ -44,27 +43,37 @@ function AdminDashboard() {
   }, []);
 
   const guardarEnSupabase = async (order) => {
+    const {
+      id,
+      ghStatus,
+      trottaStatus,
+      note,
+      payment,
+      unitPrice,
+      labels // No se envía
+    } = order;
+
     const payload = {
-      ghStatus: order.ghStatus,
-      trottaStatus: order.trottaStatus,
-      note: order.note,
-      payment: order.payment,
-      unitPrice: order.unitPrice,
-      labelsCount: order.labels?.length || 0
+      ghStatus,
+      trottaStatus,
+      note,
+      payment,
+      unitPrice,
+      labelsCount: labels?.length || 0
     };
 
-    console.log(`📤 Intentando actualizar orden ID ${order.id}...`);
+    console.log(`📤 Intentando actualizar orden ID ${id}...`);
     console.log('📦 Payload a enviar a Supabase:', payload);
 
     const { error } = await supabase
       .from('orders')
       .update(payload)
-      .eq('id', order.id);
+      .eq('id', id);
 
     if (error) {
-      console.error(`❌ ERROR al guardar orden ID ${order.id}:`, error);
+      console.error(`❌ ERROR al guardar orden ID ${id}:`, error);
     } else {
-      console.log(`✅ Orden ID ${order.id} actualizada correctamente`);
+      console.log(`✅ Orden ID ${id} actualizada correctamente`);
     }
   };
 

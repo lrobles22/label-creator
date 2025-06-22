@@ -12,7 +12,7 @@ function AdminDashboard() {
   const fetchOrders = async () => {
     const { data, error } = await supabase.from('orders').select('*');
     if (error) {
-      console.error('❌ Error al cargar datos desde Supabase:', error);
+      console.error('❌ Error loading data from Supabase:', error);
     } else {
       const enrichedData = data.map(order => ({
         ...order,
@@ -25,23 +25,45 @@ function AdminDashboard() {
   useEffect(() => {
     fetchOrders();
 
-    const subscription = supabase
-      .channel('orders_changes')
+    const interval = setInterval(fetchOrders, 2000); // Actualización continua
+
+    const channel = supabase
+      .channel('orders_channel')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: 'trottaStatus=neq.null'
+        },
         payload => {
-          console.log('📥 Cambio recibido en tiempo real:', payload);
+          console.log('🔁 trottaStatus changed:', payload.new.trottaStatus);
+          fetchOrders();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: 'ghStatus=neq.null'
+        },
+        payload => {
+          console.log('🔁 ghStatus changed:', payload.new.ghStatus);
           fetchOrders();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(subscription);
+      clearInterval(interval);
+      supabase.removeChannel(channel);
     };
   }, []);
 
+  // 🔽 Aquí continúa todo tu código sin cambios
   const guardarEnSupabase = async (order) => {
     const {
       id,
@@ -50,7 +72,7 @@ function AdminDashboard() {
       note,
       payment,
       unitPrice,
-      labels // No se envía
+      labels
     } = order;
 
     const payload = {
@@ -59,11 +81,9 @@ function AdminDashboard() {
       note,
       payment,
       unitPrice,
-      labelsCount: labels?.length || 0
+      labelsCount: labels?.length || 0,
+      labels: JSON.stringify(labels)
     };
-
-    console.log(`📤 Intentando actualizar orden ID ${id}...`);
-    console.log('📦 Payload a enviar a Supabase:', payload);
 
     const { error } = await supabase
       .from('orders')
@@ -71,9 +91,9 @@ function AdminDashboard() {
       .eq('id', id);
 
     if (error) {
-      console.error(`❌ ERROR al guardar orden ID ${id}:`, error);
+      console.error(`❌ ERROR updating order ID ${id}:`, error);
     } else {
-      console.log(`✅ Orden ID ${id} actualizada correctamente`);
+      console.log(`✅ Order ID ${id} updated successfully`);
     }
   };
 
@@ -146,19 +166,51 @@ function AdminDashboard() {
     });
   };
 
+  const handleDeleteLabel = (orderId, labelIndex) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this label?");
+    if (!confirmDelete) return;
+
+    setOrders(prev =>
+      prev.map(order => {
+        if (order.id === orderId) {
+          const updatedLabels = [...order.labels];
+          updatedLabels.splice(labelIndex, 1);
+          const updatedOrder = { ...order, labels: updatedLabels };
+          guardarEnSupabase(updatedOrder);
+          return updatedOrder;
+        }
+        return order;
+      })
+    );
+  };
+
   const handleSendLabels = (order) => {
     if (!order.labels || order.labels.length === 0) {
-      alert(`No hay labels para enviar en la orden ${order.orderNumber}`);
+      alert(`No labels available for order ${order.orderNumber}`);
       return;
     }
     const labelNames = order.labels.map(l => l.name).join(', ');
-    alert(`Enviando labels para orden ${order.orderNumber}: ${labelNames}`);
+    alert(`Sending labels for order ${order.orderNumber}: ${labelNames}`);
   };
 
   const getTotalPrice = (details, unitPrice) => {
     const match = details.match(/\d+/);
     const qty = match ? parseInt(match[0]) : 1;
     return qty * unitPrice;
+  };
+
+  const getTrottaStatusColor = (status) => {
+    switch (status) {
+      case 'Orden cancelado':
+      case 'Llanta no disponible':
+        return 'red';
+      case 'Listo para recoger':
+        return 'blue';
+      case 'Recogido':
+        return 'green';
+      default:
+        return 'black';
+    }
   };
 
   const filteredOrders = filter === 'Todos' ? orders : orders.filter(order => order.ghStatus === filter);
@@ -177,34 +229,34 @@ function AdminDashboard() {
       </div>
 
       <div className="main-content">
-        <h1>GH Tire House - Panel de Administración</h1>
+        <h1>GH Tire House - Admin Panel</h1>
 
         <div className="filter-bar">
-          <label>Filtrar por estado:</label>
+          <label>Filter by status:</label>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="Todos">Todos</option>
-            <option value="Label no disponible">Label no disponible</option>
-            <option value="Label disponible">Label disponible</option>
-            <option value="Orden cancelado">Orden cancelado</option>
+            <option value="Todos">All</option>
+            <option value="Label no disponible">Label not available</option>
+            <option value="Label disponible">Label available</option>
+            <option value="Orden cancelado">Order canceled</option>
           </select>
         </div>
 
         <table>
           <thead>
             <tr>
-              <th>Orden #</th>
-              <th>Cliente</th>
-              <th>Dirección</th>
-              <th>Orden</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Estado GH</th>
-              <th>Acción</th>
-              <th>Estado Trotta</th>
-              <th>Notas</th>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Address</th>
+              <th>Order</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>GH Status</th>
+              <th>Action</th>
+              <th>Trotta Status</th>
+              <th>Notes</th>
               <th>Total</th>
               <th>Labels</th>
-              <th><button onClick={() => alert('Procesando todos...')}>Procesar todos</button></th>
+              <th><button onClick={() => alert('Processing all...')}>Process All</button></th>
             </tr>
           </thead>
           <tbody>
@@ -222,17 +274,17 @@ function AdminDashboard() {
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     disabled={!editStatus[order.id]}
                   >
-                    <option value="Label no disponible">Label no disponible</option>
-                    <option value="Label disponible">Label disponible</option>
-                    <option value="Orden cancelado">Orden cancelado</option>
+                    <option value="Label no disponible">Label not available</option>
+                    <option value="Label disponible">Label available</option>
+                    <option value="Orden cancelado">Order canceled</option>
                   </select>
                 </td>
                 <td>
                   <button onClick={() => editStatus[order.id] ? handleSaveStatus(order.id) : setEditStatus(prev => ({ ...prev, [order.id]: true }))}>
-                    {editStatus[order.id] ? 'Guardar' : 'Editar'}
+                    {editStatus[order.id] ? 'Save' : 'Edit'}
                   </button>
                 </td>
-                <td><strong>{order.trottaStatus || '—'}</strong></td>
+                <td style={{ color: getTrottaStatusColor(order.trottaStatus) }}><strong>{order.trottaStatus || '—'}</strong></td>
                 <td>
                   <textarea
                     value={order.note}
@@ -250,7 +302,7 @@ function AdminDashboard() {
                       }
                     }}
                   >
-                    {editNote[order.id] ? 'Guardar' : 'Editar'}
+                    {editNote[order.id] ? 'Save' : 'Edit'}
                   </button>
                 </td>
                 <td>${getTotalPrice(order.orderDetails, order.unitPrice)}</td>
@@ -259,19 +311,33 @@ function AdminDashboard() {
                   <div>
                     {order.labels && order.labels.length > 0 ? (
                       order.labels.map((label, index) => (
-                        <div key={index}>
+                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <a href={label.data} download={label.name} target="_blank" rel="noopener noreferrer">
-                            📅 {label.name}
+                            📄 {label.name}
                           </a>
+                          <button
+                            style={{
+                              background: 'transparent',
+                              color: 'red',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              fontSize: '16px'
+                            }}
+                            onClick={() => handleDeleteLabel(order.id, index)}
+                            title="Delete label"
+                          >
+                            ×
+                          </button>
                         </div>
                       ))
                     ) : (
-                      <span>No hay labels</span>
+                      <span>No labels</span>
                     )}
                   </div>
                 </td>
                 <td>
-                  <button onClick={() => handleSendLabels(order)}>Enviar Labels</button>
+                  <button onClick={() => handleSendLabels(order)}>Send Labels</button>
                 </td>
               </tr>
             ))}

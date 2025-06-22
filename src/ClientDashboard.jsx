@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./styles.css";
-import { supabase } from './supabaseClient'; // Asegúrate de tener este archivo
+import { supabase } from './supabaseClient';
 
 const ClientDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -70,12 +70,22 @@ const ClientDashboard = () => {
     setTempStatus(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleUpdateStatus = (id) => {
+  const handleUpdateStatus = async (id) => {
+    const newStatus = tempStatus[id];
     const updatedOrders = orders.map(order =>
-      order.id === id ? { ...order, trottaStatus: tempStatus[id] } : order
+      order.id === id ? { ...order, trottaStatus: newStatus } : order
     );
     setOrders(updatedOrders);
     setEditStatus(prev => ({ ...prev, [id]: false }));
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ trottaStatus: newStatus })
+      .eq('id', id);
+
+    if (error) {
+      console.error("❌ Error al actualizar en Supabase:", error);
+    }
   };
 
   const openModal = (order, labels) => {
@@ -118,13 +128,25 @@ const ClientDashboard = () => {
     if (filter === "Label not available") return !order.labels || order.labels.length === 0;
     if (filter === "Label available") return order.labels && order.labels.length > 0;
     if (filter === "Orden cancelada") return order.ghStatus === "Orden cancelado";
+    if (filter === "Recojido") return order.trottaStatus === "Recojido";
     return true;
   });
 
   return (
     <div className="admin-container">
       <div className="sidebar">
-        <h2>Panel Cliente</h2>
+        <h2>📁 Mi cuenta</h2>
+        <ul>
+          <li onClick={() => setFilter("Todos")}>📦 Todos</li>
+          <li onClick={() => setFilter("Label not available")}>⏳ Label not available</li>
+          <li onClick={() => setFilter("Label available")}>✅ Label available</li>
+          <li onClick={() => setFilter("Orden cancelada")}>❌ Orden cancelada</li>
+          <li onClick={() => setFilter("Recojido")}>📤 Recojido</li>
+          <hr />
+          <li className="inactive">⚙️ Configuración <span style={{ fontSize: "0.8em" }}>(coming soon)</span></li>
+          <li className="inactive">📊 Reporte <span style={{ fontSize: "0.8em" }}>(coming soon)</span></li>
+          <li className="inactive">💳 Bill pendiente <span style={{ fontSize: "0.8em" }}>(coming soon)</span></li>
+        </ul>
       </div>
 
       <div className="main-content">
@@ -144,6 +166,7 @@ const ClientDashboard = () => {
               <option value="Label not available">Label not available</option>
               <option value="Label available">Label available</option>
               <option value="Orden cancelada">Orden cancelada</option>
+              <option value="Recojido">Recojido</option>
             </select>
           </div>
 
@@ -188,6 +211,7 @@ const ClientDashboard = () => {
                       >
                         <option value="Cancelado - Llanta no disponible">Cancelado - Llanta no disponible</option>
                         <option value="Listo para recojida">Listo para recojida</option>
+                        <option value="Recojido">Recojido</option>
                       </select>
                     </td>
                     <td>

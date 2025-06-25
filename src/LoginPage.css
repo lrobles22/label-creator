@@ -1,79 +1,79 @@
+from pathlib import Path
+
+# Crear el nuevo contenido de LoginPage.css de nuevo tras reset
+new_login_css = """
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  background-size: 400% 400%;
+  animation: gradientAnimation 12s ease infinite;
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
 .login-container {
   display: flex;
-  height: 100vh;
-  font-family: 'Segoe UI', sans-serif;
-}
-
-.login-left {
-  flex: 1;
-  background: linear-gradient(135deg, #6e00ff, #ff5991);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 80px;
-}
-
-.login-left h1 {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-}
-
-.login-left p {
-  font-size: 1.2rem;
-  max-width: 350px;
-}
-
-.login-right {
-  flex: 1;
-  background: white;
-  display: flex;
   justify-content: center;
   align-items: center;
+  height: 100vh;
 }
 
-.login-form {
-  width: 300px;
-  display: flex;
-  flex-direction: column;
+.login-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
 }
 
-.login-form h2 {
-  margin-bottom: 20px;
-  color: #6e00ff;
-}
-
-.login-form input {
-  padding: 10px 15px;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-}
-
-.login-options {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
+.login-box h1 {
+  font-size: 24px;
+  color: #1f1f1f;
   margin-bottom: 10px;
 }
 
-.login-form button {
-  padding: 10px;
-  background: linear-gradient(135deg, #6e00ff, #ff5991);
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  margin-top: 10px;
-  font-size: 16px;
+.login-box .slogan {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 30px;
 }
 
-.error {
-  color: red;
-  font-size: 0.85rem;
-  margin-top: 5px;
+.login-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
 }
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #0b5ed7;
+}
+"""
+
+# Guardar archivo como LoginPage.css
+css_path = Path("/mnt/data/LoginPage.css")
+css_path.write_text(new_login_css)
+
+css_path.name

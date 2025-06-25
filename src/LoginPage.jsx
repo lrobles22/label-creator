@@ -7,20 +7,31 @@ function LoginPage() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .eq("password", password)
-      .single();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    if (error || !data) {
+    if (error || !data?.user) {
       alert("Correo o contraseña inválidos");
     } else {
-      // ✅ Guardar datos en localStorage para futuras validaciones
-      localStorage.setItem("usuario", JSON.stringify(data));
+      const user = data.user;
+      const role = user?.user_metadata?.role;
+      const company = user?.user_metadata?.company || "";
 
-      const role = data.role;
+      if (!role) {
+        alert("El usuario no tiene un rol asignado.");
+        return;
+      }
+
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify({
+          email: user.email,
+          role,
+          company,
+        })
+      );
 
       if (role === "admin") {
         window.location.href = "/admin";
@@ -35,7 +46,7 @@ function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Welcome to WTW Gun Hill Tire House for Vendors</h1>
+        <h1>Welcome to Gun Hill Tire Vendors</h1>
         <p className="slogan">Streamline your orders and tracking experience.</p>
 
         <input
@@ -55,24 +66,6 @@ function LoginPage() {
 
         <button onClick={handleLogin} className="login-button">
           Login
-        </button>
-
-        {/* 🔓 Botón de prueba para entrar como cliente sin login */}
-        <button
-          style={{
-            marginTop: "20px",
-            background: "transparent",
-            color: "#666",
-            border: "none",
-            cursor: "pointer",
-            textDecoration: "underline"
-          }}
-          onClick={() => {
-            localStorage.setItem("usuario", JSON.stringify({ role: "client" }));
-            window.location.href = "/client";
-          }}
-        >
-          🚪 Entrar como Cliente (prueba)
         </button>
       </div>
     </div>

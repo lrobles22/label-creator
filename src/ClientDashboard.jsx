@@ -1,10 +1,13 @@
+// ClientDashboard.jsx
 import React, { useEffect, useState, useRef } from "react";
 import "./styles.css";
 import { supabase } from './supabaseClient';
 
 const ClientDashboard = () => {
+  console.log("✅ ClientDashboard montado");
+
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState("Todos");
+  const [filter, setFilter] = useState("All");
   const [error, setError] = useState(false);
   const [editStatus, setEditStatus] = useState({});
   const [tempStatus, setTempStatus] = useState({});
@@ -14,32 +17,53 @@ const ClientDashboard = () => {
   const dragData = useRef({ isDragging: false, originX: 0, originY: 0, translateX: 0, translateY: 0 });
 
   useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("usuario"));
+    if (!storedUser || storedUser.role !== "client") {
+      window.location.href = "/";
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       const { data, error } = await supabase.from('orders').select('*');
-
       if (error || !Array.isArray(data)) {
         console.error("❌ Error al cargar datos desde Supabase:", error);
         setError(true);
         return;
       }
 
-      const formatted = data.map((item, index) => ({
-        id: item.id ?? index + 1,
-        orderNumber: item.orderNumber,
-        customerName: item.customerName,
-        address: item.address,
-        orderDetails: item.orderDetails,
-        date: item.date,
-        time: item.time,
-        ghStatus: item.ghStatus,
-        trottaStatus: item.trottaStatus,
-        note: item.note,
-        payment: item.payment,
-        unitPrice: item.unitPrice ?? 0,
-        labelsCount: parseInt(item.labelsCount) || 0,
-        labels: item.labels ? JSON.parse(item.labels) : []
-      }));
+      let formatted = data.map((item, index) => {
+        let parsedLabels = [];
+        try {
+          parsedLabels = item.labels ? JSON.parse(item.labels) : [];
+        } catch (e) {
+          console.warn(`⚠️ Error parseando labels en ID ${item.id ?? index + 1}:`, e);
+        }
 
+        return {
+          id: item.id ?? index + 1,
+          orderNumber: item.orderNumber,
+          customerName: item.customerName,
+          address: item.address,
+          orderDetails: item.orderDetails,
+          date: item.date,
+          time: item.time,
+          ghStatus: item.ghStatus,
+          trottaStatus: item.trottaStatus,
+          note: item.note,
+          payment: item.payment,
+          unitPrice: item.unitPrice ?? 0,
+          labelsCount: parseInt(item.labelsCount) || 0,
+          labels: parsedLabels,
+          company: item.company || ""
+        };
+      });
+
+      formatted.sort((a, b) => new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`));
+      const storedUser = JSON.parse(localStorage.getItem("usuario"));
+      if (storedUser?.role === "client" && storedUser?.company) {
+        formatted = formatted.filter((order) => order.company === storedUser.company);
+      }
       setOrders(formatted);
       setError(false);
     };
@@ -48,7 +72,6 @@ const ClientDashboard = () => {
     const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
   }, []);
-
   const base64ToBlobUrl = (base64Data, contentType = "application/pdf") => {
     try {
       const byteCharacters = atob(base64Data.split(",")[1]);
@@ -75,7 +98,14 @@ const ClientDashboard = () => {
     const updatedOrders = orders.map(order =>
       order.id === id ? { ...order, trottaStatus: newStatus } : order
     );
-    setOrders(updatedOrders);
+
+    const ordered = updatedOrders.sort((a, b) => {
+      const dateA = new Date(`${a.date || '1970-01-01'} ${a.time || '00:00'}`);
+      const dateB = new Date(`${b.date || '1970-01-01'} ${b.time || '00:00'}`);
+      return dateB - dateA;
+    });
+
+    setOrders(ordered);
     setEditStatus(prev => ({ ...prev, [id]: false }));
 
     const { error } = await supabase
@@ -86,6 +116,17 @@ const ClientDashboard = () => {
     if (error) {
       console.error("❌ Error al actualizar en Supabase:", error);
     }
+  };
+
+  const renderGhStatusBadge = (status) => {
+    if (!status || status.trim() === '') {
+      return <span className="badge badge-black">🕓 Pending</span>;
+    }
+    const lower = status.toLowerCase();
+    if (lower.includes("cancelado")) return <span className="badge badge-red">❌ Order Cancelled by Gun Hill</span>;
+    if (lower.includes("label disponible")) return <span className="badge badge-green glow">✅ Label Available</span>;
+    if (lower.includes("no disponible")) return <span className="badge badge-blue">📦 Label Not Available</span>;
+    return <span className="badge badge-black">🕓 {status}</span>;
   };
 
   const openModal = (order, labels) => {
@@ -122,66 +163,115 @@ const ClientDashboard = () => {
     dragData.current.translateX = newTranslateX;
     dragData.current.translateY = newTranslateY;
   };
+  const handleLogout = () => {
+    localStorage.removeItem("usuario");
+    window.location.href = "/";
+  };
+
+  console.log("🧪 Órdenes cargadas (sin filtro):", orders);
 
   const filteredOrders = orders.filter(order => {
-    if (filter === "Todos") return true;
-    if (filter === "Label not available") return !order.labels || order.labels.length === 0;
-    if (filter === "Label available") return order.labels && order.labels.length > 0;
-    if (filter === "Orden cancelada") return order.ghStatus === "Orden cancelado";
-    if (filter === "Recojido") return order.trottaStatus === "Recojido";
+    if (filter === "All") return true;
+
+    // GH exactos
+    if (filter === "Label Available")
+      return order.ghStatus && order.ghStatus.trim().toLowerCase() === "label disponible";
+    if (filter === "Label Not Available")
+      return order.ghStatus && order.ghStatus.trim().toLowerCase() === "label no disponible";
+    if (filter === "Order Cancelled by Gun Hill")
+      return order.ghStatus && order.ghStatus.trim().toLowerCase() === "orden cancelado";
+
+    // Trotta exactos
+    if (filter === "Shipping Pending")
+      return order.trottaStatus && order.trottaStatus.trim().toLowerCase() === "pending";
+    if (filter === "Label Pending")
+      return !order.ghStatus || order.ghStatus.trim() === "" || 
+             ["pending", "label no disponible"].includes(order.ghStatus.trim().toLowerCase());
+
+    if (filter === "Ready for Pickup")
+      return order.trottaStatus && order.trottaStatus.trim().toLowerCase() === "ready for pickup";
+    if (filter === "Cancelled - Tire Not Available")
+      return order.trottaStatus && order.trottaStatus.trim().toLowerCase() === "cancelled - tire not available";
+    if (filter === "Picked Up")
+      return order.trottaStatus && order.trottaStatus.trim().toLowerCase() === "picked up";
+
+    // Lógica combinada estricta para label not available
+    if (filter === "Label Not Available") {
+      return (!order.labels || order.labels.length === 0) &&
+             order.ghStatus && order.ghStatus.trim().toLowerCase() === "label no disponible";
+    }
+
+    // Lógica estricta para label available
+    if (filter === "Label Available") {
+      const status = order.trottaStatus?.trim().toLowerCase();
+      if (status === "ready for pickup" || status === "picked up") return false;
+      return order.labels && order.labels.length > 0 &&
+             order.ghStatus && order.ghStatus.trim().toLowerCase() === "label disponible";
+    }
+
     return true;
   });
-
   return (
     <div className="admin-container">
       <div className="sidebar">
-        <h2>📁 Mi cuenta</h2>
+        <h2>📁 My Account</h2>
         <ul>
-          <li onClick={() => setFilter("Todos")}>📦 Todos</li>
-          <li onClick={() => setFilter("Label not available")}>⏳ Label not available</li>
-          <li onClick={() => setFilter("Label available")}>✅ Label available</li>
-          <li onClick={() => setFilter("Orden cancelada")}>❌ Orden cancelada</li>
-          <li onClick={() => setFilter("Recojido")}>📤 Recojido</li>
-          <hr />
-          <li className="inactive">⚙️ Configuración <span style={{ fontSize: "0.8em" }}>(coming soon)</span></li>
-          <li className="inactive">📊 Reporte <span style={{ fontSize: "0.8em" }}>(coming soon)</span></li>
-          <li className="inactive">💳 Bill pendiente <span style={{ fontSize: "0.8em" }}>(coming soon)</span></li>
+          <li onClick={() => setFilter("All")}>📦 All</li>
+          <li onClick={() => setFilter("Label Available")}>✅ Label Available</li>
+          <li onClick={() => setFilter("Label Not Available")}>📦 Label Not Available</li>
+          <li onClick={() => setFilter("Shipping Pending")}>🚚 Shipping Pending</li>
+          <li onClick={() => setFilter("Ready for Pickup")}>📋 Ready for Pickup</li>
+          <li onClick={() => setFilter("Picked Up")}>📤 Picked Up</li>
+          <li onClick={() => setFilter("Cancelled - Tire Not Available")}>❌ Cancelled - Tire Not Available</li>
+          <li onClick={() => setFilter("Order Cancelled by Gun Hill")}>❌ Order Cancelled by Gun Hill</li>
         </ul>
+        <hr />
+        <div className="coming-soon">
+          <p style={{ color: "#888" }}>⚙️ Configuración (coming soon)</p>
+          <p style={{ color: "#888" }}>📊 Reporte (coming soon)</p>
+          <p style={{ color: "#888" }}>💳 Bill pendiente (coming soon)</p>
+        </div>
+        <hr />
+        <button onClick={handleLogout} className="logout-button">🔓 Logout</button>
       </div>
 
       <div className="main-content">
-        <div className="content-wrapper">
-          <h1>Panel Cliente - Trotta Tire</h1>
+        <div className="content-wrapper" style={{ maxWidth: "95%", margin: "0 auto" }}>
+          <h1>Panel Customer - Trotta Tire</h1>
+<div className="filter-bar">
+  <label>Filter by Status del Label:</label>
+  <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+    <option value="All">All</option>
+    <option value="Label Available">Label Available</option>
+    <option value="Label Not Available">Label Not Available</option>
+    <option value="Shipping Pending">Shipping Pending</option>
+    <option value="Ready for Pickup">Ready for Pickup</option>
+    <option value="Picked Up">Picked Up</option>
+    <option value="Cancelled - Tire Not Available">Cancelled - Tire Not Available</option>
+    <option value="Order Cancelled by Gun Hill">Order Cancelled by Gun Hill</option>
+  </select>
+</div>
+
 
           {error && (
             <div style={{ backgroundColor: "#ffe0e0", color: "#a00", padding: "10px", marginBottom: "10px", borderRadius: "5px" }}>
-              ⚠️ No se pudo cargar la información desde Supabase. Mostrando última copia válida.
+              ⚠️ Could not load data from Supabase. Showing last valid copy.
             </div>
           )}
-
-          <div className="filter-bar">
-            <label>Filtrar por estado del Label:</label>
-            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="Todos">Todos</option>
-              <option value="Label not available">Label not available</option>
-              <option value="Label available">Label available</option>
-              <option value="Orden cancelada">Orden cancelada</option>
-              <option value="Recojido">Recojido</option>
-            </select>
-          </div>
 
           <table>
             <thead>
               <tr>
-                <th>Orden #</th>
-                <th>Cliente</th>
-                <th>Dirección</th>
-                <th>Orden</th>
-                <th>Fecha y Hora</th>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Address</th>
+                <th>Order</th>
+                <th>Date y Hora</th>
                 <th>Estado Gun Hill</th>
-                <th>Estado Shipping</th>
-                <th>Acción</th>
-                <th>Notas</th>
+                <th>Shipping Status</th>
+                <th>Action</th>
+                <th>Notes</th>
+                <th>Quantity</th>
                 <th>Label</th>
               </tr>
             </thead>
@@ -190,35 +280,38 @@ const ClientDashboard = () => {
                 const fechaHora = `${order.date || ""} ${order.time || ""}`;
                 const labels = order.labels || [];
                 const isEditable = !!editStatus[order.id];
+                const qtyMatch = order.orderDetails?.match(/×\s?(\d+)/) || order.orderDetails?.match(/x\s?(\d+)/i);
+                const quantity = qtyMatch ? qtyMatch[1] : "";
 
                 let labelClass = "";
-                if (order.trottaStatus === "Label available") labelClass = "label-available";
-                if (order.trottaStatus === "Cancelado - Llanta no disponible") labelClass = "label-cancelado";
+                if (order.trottaStatus === "Label Available") labelClass = "label-available";
+                if (order.trottaStatus === "Cancelled - Tire Not Available") labelClass = "label-cancelado";
 
                 return (
                   <tr key={order.id ?? idx}>
                     <td>{order.orderNumber}</td>
                     <td>{order.customerName}</td>
                     <td>{order.address}</td>
-                    <td>{order.orderDetails}</td>
+                    <td>{order.orderDetails.replace(/\$[\d,]+(\.\d{2})?/g, '')}</td>
                     <td>{fechaHora}</td>
-                    <td>{order.ghStatus}</td>
+                    <td>{renderGhStatusBadge(order.ghStatus)}</td>
                     <td>
                       <select
                         value={isEditable ? tempStatus[order.id] || "" : order.trottaStatus || ""}
                         onChange={(e) => handleTempStatusChange(order.id, e.target.value)}
                         disabled={!isEditable}
                       >
-                        <option value="Cancelado - Llanta no disponible">Cancelado - Llanta no disponible</option>
-                        <option value="Listo para recojida">Listo para recojida</option>
-                        <option value="Recojido">Recojido</option>
+                        <option value="Pending">Pending</option>
+                        
+                        
+                        
                       </select>
                     </td>
                     <td>
                       {isEditable ? (
                         <button onClick={() => handleUpdateStatus(order.id)}>Update</button>
                       ) : (
-                        <button onClick={() => handleEnableEdit(order.id)}>Editar</button>
+                        <button onClick={() => handleEnableEdit(order.id)}>Edit</button>
                       )}
                     </td>
                     <td>
@@ -226,7 +319,7 @@ const ClientDashboard = () => {
                     </td>
                     <td>
                       {labels.length === 0 ? (
-                        "No disponible"
+                        "Not Available"
                       ) : (
                         <button className={labelClass} onClick={() => openModal(order, labels)}>
                           📥 {labels.length} Label{labels.length > 1 ? "s" : ""}
@@ -245,18 +338,18 @@ const ClientDashboard = () => {
         <div className="modal-overlay" onClick={() => setModalLabels(null)}>
           <div className="modal-content" ref={modalRef} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" onMouseDown={onDragStart} onMouseUp={onDragEnd} onMouseMove={onDrag}>
-              <span>Orden #{modalOrder.orderNumber}</span>
+              <span>Order #{modalOrder.orderNumber}</span>
               <button onClick={() => setModalLabels(null)}>×</button>
             </div>
             <div className="modal-body">
-              <p><strong>Cliente:</strong> {modalOrder.customerName}</p>
-              <p><strong>Dirección:</strong> {modalOrder.address}</p>
-              <p><strong>Producto:</strong> {modalOrder.orderDetails}</p>
-              <p><strong>Fecha:</strong> {modalOrder.date}</p>
-              <p><strong>Hora:</strong> {modalOrder.time}</p>
-              <p><strong>Estado GH:</strong> {modalOrder.ghStatus}</p>
-              <p><strong>Estado Shipping:</strong> {modalOrder.trottaStatus}</p>
-              <p><strong>Notas:</strong> {modalOrder.note}</p>
+              <p><strong>Customer:</strong> {modalOrder.customerName}</p>
+              <p><strong>Address:</strong> {modalOrder.address}</p>
+              <p><strong>Product:</strong> {modalOrder.orderDetails}</p>
+              <p><strong>Date:</strong> {modalOrder.date}</p>
+              <p><strong>Time:</strong> {modalOrder.time}</p>
+              <p><strong>Gun Hill Status:</strong> {modalOrder.ghStatus}</p>
+              <p><strong>Shipping Status:</strong> {modalOrder.trottaStatus}</p>
+              <p><strong>Notes:</strong> {modalOrder.note}</p>
 
               {modalLabels.map((label, idx) => {
                 const blobUrl = base64ToBlobUrl(label.data);
@@ -266,7 +359,7 @@ const ClientDashboard = () => {
                       const win = window.open(blobUrl, "_blank");
                       if (win) win.print();
                     }}>
-                      Imprimir Label {idx + 1}
+                      Print Label {idx + 1}
                     </button>
                   </div>
                 );
@@ -280,3 +373,4 @@ const ClientDashboard = () => {
 };
 
 export default ClientDashboard;
+

@@ -1,4 +1,3 @@
-/* 🎨 Fondo animado estilo Doximity/Instagram */
 body {
   margin: 0;
   padding: 0;
@@ -31,27 +30,25 @@ body {
 /* Sidebar gris claro con letras grandes, negrita y iconos */
 .sidebar {
   width: 250px;
-  background-color: #c4c8cc; /* gris claro suave */
+  background-color: #c4c8cc;
   color: #1a1a1a;
   padding: 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  font-size: 18px !important;   /* letras más grandes */
-  font-weight: 700 !important;  /* negrita */
+  font-size: 18px !important;
+  font-weight: 700 !important;
 }
 
 .sidebar h2 {
-  font-size: 24px !important;   /* título más grande */
-  font-weight: 700 !important;  /* negrita para título */
+  font-size: 24px !important;
+  font-weight: 700 !important;
   margin-bottom: 20px;
 }
 
-/* Lista sin estilo por defecto */
 .sidebar ul {
   list-style: none;
   padding: 0;
 }
 
-/* Elementos del menú con iconos Unicode */
 .sidebar li {
   margin: 12px 0;
   padding: 10px;
@@ -61,12 +58,11 @@ body {
   transition: background 0.3s, color 0.3s;
   color: #1a1a1a;
   position: relative;
-  padding-left: 30px; /* espacio para icono */
+  padding-left: 30px;
 }
 
-/* Iconos antes del texto */
 .sidebar li:nth-child(1)::before {
-  content: "\1F4E6"; /* 📦 caja - Trotta Orders */
+  content: "\1F4E6";
   position: absolute;
   left: 10px;
   top: 50%;
@@ -74,7 +70,7 @@ body {
 }
 
 .sidebar li:nth-child(2)::before {
-  content: "\2699"; /* ⚙ engranaje - Scraper Trotta */
+  content: "\2699";
   position: absolute;
   left: 10px;
   top: 50%;
@@ -82,7 +78,7 @@ body {
 }
 
 .sidebar li:nth-child(3)::before {
-  content: "\1F4DD"; /* 📝 - Inventory Update */
+  content: "\1F4DD";
   position: absolute;
   left: 10px;
   top: 50%;
@@ -90,7 +86,7 @@ body {
 }
 
 .sidebar li:nth-child(4)::before {
-  content: "\1F4CA"; /* 📊 - Sales Report */
+  content: "\1F4CA";
   position: absolute;
   left: 10px;
   top: 50%;
@@ -98,20 +94,18 @@ body {
 }
 
 .sidebar li:nth-child(5)::before {
-  content: "\1F4B5"; /* 💵 - Pending Payments */
+  content: "\1F4B5";
   position: absolute;
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* Hover */
 .sidebar li:hover {
   background-color: #b0b5b8;
   color: #1a1a1a;
 }
 
-/* Panel de contenido */
 .main-content {
   flex: 1;
   padding: 40px;
@@ -132,7 +126,6 @@ body {
   padding: 30px;
 }
 
-/* Títulos */
 h1, h2 {
   color: #1a1a1a;
   margin-bottom: 20px;
@@ -147,7 +140,6 @@ h1, h2 {
   margin-right: 10px;
 }
 
-/* Tabla clara */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -181,7 +173,6 @@ td textarea {
   font-size: 13px;
 }
 
-/* Botones y campos */
 button,
 select,
 input[type="file"],
@@ -220,7 +211,6 @@ button:hover {
   background-color: #dcdcdc;
 }
 
-/* Scroll */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -231,3 +221,210 @@ button:hover {
   background-color: #888;
   border-radius: 6px;
 }
+
+.crear-usuario-box {
+  background-color: #ffffff;
+  color: #1a1a1a;
+  padding: 20px 24px;
+  margin-bottom: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 460px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.crear-usuario-box h3 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.crear-usuario-box label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.crear-usuario-box input,
+.crear-usuario-box select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background-color: #f8f8f8;
+  color: #1a1a1a;
+}
+
+.crear-usuario-box button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.crear-usuario-box button:hover {
+  background-color: #0056b3;
+}
+
+.crear-usuario-box p {
+  margin-top: 12px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* 🌐 Modal de creación de usuario */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px 30px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-content h3 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.modal-content label {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.modal-content input[type="email"],
+.modal-content input[type="password"],
+.modal-content input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+.modal-content button {
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal-content button:hover {
+  background-color: #218838;
+}
+
+/* 🎨 ESTILOS PARA BADGES DE TROTTASTATUS */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  min-width: 120px;
+}
+
+.badge-blue {
+  background-color: #007bff;
+}
+
+.badge-green {
+  background-color: #28a745;
+}
+
+.badge-red {
+  background-color: #dc3545;
+}
+
+.badge-gray {
+  background-color: #6c757d;
+}
+
+/* ✅ COLORES PARA COMBOBOX GH STATUS */
+.status-blue {
+  background-color: #007bff !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+.status-green {
+  background-color: #28a745 !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+.status-red {
+  background-color: #dc3545 !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+.status-gray {
+  background-color: #6c757d !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+/* ✅ COMBOBOX TROTTASTATUS – SOLO APLICA A SELECT CON ESA CLASE */
+select.trotta-status {
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: white; /* Texto blanco por defecto */
+}
+
+/* Opciones con fondo personalizado */
+select.trotta-status option[value="Pendiente"] {
+  background-color: #ffc107;
+  color: black;
+}
+
+select.trotta-status option[value="Preparando"] {
+  background-color: #007bff;
+  color: white;
+}
+
+select.trotta-status option[value="Enviado"] {
+  background-color: #28a745;
+  color: white;
+}
+
+select.trotta-status option[value="Cancelado"] {
+  background-color: #dc3545;
+  color: white;
+}
+

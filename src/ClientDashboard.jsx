@@ -17,7 +17,7 @@ const ClientDashboard = () => {
   const dragData = useRef({ isDragging: false, originX: 0, originY: 0, translateX: 0, translateY: 0 });
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("usuario"));
+    const storedUser = JSON.parse(localStorage.getItem("usuario_cliente"));
     if (!storedUser || storedUser.role !== "client") {
       window.location.href = "/";
     }
@@ -60,7 +60,7 @@ const ClientDashboard = () => {
       });
 
       formatted.sort((a, b) => new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`));
-      const storedUser = JSON.parse(localStorage.getItem("usuario"));
+      const storedUser = JSON.parse(localStorage.getItem("usuario_cliente"));
       if (storedUser?.role === "client" && storedUser?.company) {
         formatted = formatted.filter((order) => order.company === storedUser.company);
       }
@@ -164,7 +164,7 @@ const ClientDashboard = () => {
     dragData.current.translateY = newTranslateY;
   };
   const handleLogout = () => {
-    localStorage.removeItem("usuario");
+    localStorage.removeItem("usuario_cliente");
     window.location.href = "/";
   };
 

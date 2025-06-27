@@ -24,14 +24,11 @@ function LoginPage() {
         return;
       }
 
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify({
-          email: user.email,
-          role,
-          company,
-        })
-      );
+      if (role === "admin") {
+        localStorage.setItem("usuario_admin", JSON.stringify({ email: user.email, role, company }));
+      } else if (role === "client") {
+        localStorage.setItem("usuario_cliente", JSON.stringify({ email: user.email, role, company }));
+      }
 
       if (role === "admin") {
         window.location.href = "/admin";

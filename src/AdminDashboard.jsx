@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient';
 
 function AdminDashboard() {
 useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("usuario"));
+    const storedUser = JSON.parse(localStorage.getItem("usuario_admin"));
     if (!storedUser || storedUser.role !== "admin") {
       window.location.href = "/";
     }
@@ -421,7 +421,15 @@ const ordenarPorFecha = (lista) => {
             <label>Contraseña:</label>
             <input type="password" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} />
             <label>Compañía:</label>
-            <input type="text" value={newUserCompany} onChange={(e) => setNewUserCompany(e.target.value)} />
+            <select value={newUserCompany} onChange={(e) => setNewUserCompany(e.target.value)}>
+        <option value="Trotta Tires">Trotta Tires</option>
+        <option value="US AUTOFORCE (MFI)">US AUTOFORCE (MFI)</option>
+        <option value="IPW">IPW</option>
+        <option value="Velocity Wheels">Velocity Wheels</option>
+        <option value="GUN HILL TIRE HOUSE">GUN HILL TIRE HOUSE</option>
+        <option value="WEBSTER TIRES">WEBSTER TIRES</option>
+        <option value="PRIORITY TIRE">PRIORITY TIRE</option>
+    </select>
             <label>Rol:</label>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
               <label>

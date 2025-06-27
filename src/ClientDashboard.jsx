@@ -171,6 +171,12 @@ const ClientDashboard = () => {
   console.log("🧪 Órdenes cargadas (sin filtro):", orders);
 
   const filteredOrders = orders.filter(order => {
+    if (filter === "Label Available") {
+      const ghStatus = order.ghStatus?.trim().toLowerCase();
+      const trottaStatus = order.trottaStatus?.trim().toLowerCase();
+      return ghStatus === "label disponible" && trottaStatus === "pending";
+    }
+
     if (filter === "All") return true;
 
     // GH exactos
@@ -202,12 +208,7 @@ const ClientDashboard = () => {
     }
 
     // Lógica estricta para label available
-    if (filter === "Label Available") {
-      const status = order.trottaStatus?.trim().toLowerCase();
-      if (status === "ready for pickup" || status === "picked up") return false;
-      return order.labels && order.labels.length > 0 &&
-             order.ghStatus && order.ghStatus.trim().toLowerCase() === "label disponible";
-    }
+    
 
     return true;
   });

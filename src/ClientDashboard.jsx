@@ -266,6 +266,7 @@ const ClientDashboard = () => {
                 <th>Customer</th>
                 <th>Address</th>
                 <th>Order</th>
+                <th>Quantity</th>
                 <th>Date y Hora</th>
                 <th>Estado Gun Hill</th>
                 <th>Shipping Status</th>
@@ -293,6 +294,7 @@ const ClientDashboard = () => {
                     <td>{order.customerName}</td>
                     <td>{order.address}</td>
                     <td>{order.orderDetails.replace(/\$[\d,]+(\.\d{2})?/g, '')}</td>
+                    <td>{quantity}</td>
                     <td>{fechaHora}</td>
                     <td>{renderGhStatusBadge(order.ghStatus)}</td>
                     <td>
@@ -302,6 +304,9 @@ const ClientDashboard = () => {
                         disabled={!isEditable}
                       >
                         <option value="Pending">Pending</option>
+                        <option value="Cancelled - Tire Not Available">Cancelled - Tire Not Available</option>
+                        <option value="Ready for Pickup">Ready for Pickup</option>
+                        <option value="Picked Up">Picked Up</option>
                         
                         
                         

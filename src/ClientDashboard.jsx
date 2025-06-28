@@ -8,6 +8,7 @@ const ClientDashboard = () => {
 
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState("All");
+  const [orderSearch, setOrderSearch] = useState("");
   const [error, setError] = useState(false);
   const [editStatus, setEditStatus] = useState({});
   const [tempStatus, setTempStatus] = useState({});
@@ -171,13 +172,14 @@ const ClientDashboard = () => {
   console.log("🧪 Órdenes cargadas (sin filtro):", orders);
 
   const filteredOrders = orders.filter(order => {
+    const matchesOrder = orderSearch === "" || order.orderNumber?.toString().includes(orderSearch);
     if (filter === "Label Available") {
       const ghStatus = order.ghStatus?.trim().toLowerCase();
       const trottaStatus = order.trottaStatus?.trim().toLowerCase();
       return ghStatus === "label disponible" && trottaStatus === "pending";
     }
 
-    if (filter === "All") return true;
+    if (filter === "All") return matchesOrder;
 
     // GH exactos
     if (filter === "Label Available")
@@ -210,7 +212,7 @@ const ClientDashboard = () => {
     // Lógica estricta para label available
     
 
-    return true;
+    return matchesOrder;
   });
   return (
     <div className="admin-container">
@@ -239,7 +241,7 @@ const ClientDashboard = () => {
       <div className="main-content">
         <div className="content-wrapper" style={{ maxWidth: "95%", margin: "0 auto" }}>
           <h1>Panel Customer - Trotta Tire</h1>
-<div className="filter-bar">
+<div className="filter-bar" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
   <label>Filter by Status del Label:</label>
   <select value={filter} onChange={(e) => setFilter(e.target.value)}>
     <option value="All">All</option>
@@ -251,6 +253,7 @@ const ClientDashboard = () => {
     <option value="Cancelled - Tire Not Available">Cancelled - Tire Not Available</option>
     <option value="Order Cancelled by Gun Hill">Order Cancelled by Gun Hill</option>
   </select>
+  <input type="text" placeholder="Search Order #" value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} style={{ padding: "5px", fontSize: "14px", borderRadius: "4px", border: "1px solid #ccc" }} />
 </div>
 
 
@@ -379,4 +382,3 @@ const ClientDashboard = () => {
 };
 
 export default ClientDashboard;
-

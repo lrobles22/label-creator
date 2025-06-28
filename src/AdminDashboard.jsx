@@ -11,7 +11,9 @@ useEffect(() => {
   }, []);
 
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState('Todos');
+  const [filter, setFilter] = useState("All");
+  const [orderSearch, setOrderSearch] = useState("");
+  
   const [editStatus, setEditStatus] = useState({});
   const [editNote, setEditNote] = useState({});
   const [isEditing, setIsEditing] = useState(false);
@@ -22,6 +24,7 @@ useEffect(() => {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserCompany, setNewUserCompany] = useState('Trotta Tires');
   const [newUserRole, setNewUserRole] = useState('client');
+  const [modalLabels, setModalLabels] = useState(null);
 
   
   const handleDelete = async (orderId) => {
@@ -99,7 +102,24 @@ const ordenarPorFecha = (lista) => {
       .channel('orders_channel')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => fetchOrders())
       .subscribe();
-    return () => {
+    const filteredOrders = orders.filter(order => {
+    const gh = order.ghStatus?.trim().toLowerCase();
+    const trotta = order.trottaStatus?.trim().toLowerCase();
+    const matchesOrder = orderSearch === "" || order.orderNumber?.toString().includes(orderSearch);
+
+    if (filter === "All") return matchesOrder;
+    if (filter === "Label Available") return gh === "label disponible" && trotta === "pending";
+    if (filter === "Label Not Available") return (!order.labels || order.labels.length === 0) && gh === "label no disponible";
+    if (filter === "Shipping Pending") return trotta === "pending";
+    if (filter === "Ready for Pickup") return trotta === "ready for pickup";
+    if (filter === "Picked Up") return trotta === "picked up";
+    if (filter === "Cancelled - Tire Not Available") return trotta === "cancelled - tire not available";
+    if (filter === "Order Cancelled by Gun Hill") return gh === "orden cancelado";
+
+    return matchesOrder;
+  });
+
+return () => {
       clearInterval(interval);
       supabase.removeChannel(channel);
     };
@@ -246,8 +266,25 @@ const ordenarPorFecha = (lista) => {
     return 'status-gray';
   };
 
-  const filteredOrders = filter === 'Todos' ? orders : orders.filter(order => order.ghStatus === filter);
-  return (
+  
+  const filteredOrders = orders.filter(order => {
+    const gh = order.ghStatus?.trim().toLowerCase();
+    const trotta = order.trottaStatus?.trim().toLowerCase();
+    const matchesOrder = orderSearch === "" || order.orderNumber?.toString().includes(orderSearch);
+
+    if (filter === "All") return matchesOrder;
+    if (filter === "Label Available") return gh === "label disponible" && trotta === "pending";
+    if (filter === "Label Not Available") return (!order.labels || order.labels.length === 0) && gh === "label no disponible";
+    if (filter === "Shipping Pending") return trotta === "pending";
+    if (filter === "Ready for Pickup") return trotta === "ready for pickup";
+    if (filter === "Picked Up") return trotta === "picked up";
+    if (filter === "Cancelled - Tire Not Available") return trotta === "cancelled - tire not available";
+    if (filter === "Order Cancelled by Gun Hill") return gh === "orden cancelado";
+
+    return matchesOrder;
+  });
+
+return (
     <div className="admin-container">
       <div className="sidebar">
         <h2>GH Tire Panel</h2>
@@ -260,26 +297,39 @@ const ordenarPorFecha = (lista) => {
           <li onClick={() => setShowModal(true)} style={{ cursor: 'pointer', color: '#007bff' }}>
             ➕ Crear Usuario
           </li>
+        
+          <li
+            onClick={() => {
+              localStorage.removeItem("usuario_admin");
+              window.location.href = "/";
+            }}
+            style={{ cursor: 'pointer', color: 'red', fontWeight: 'bold' }}
+          >
+            🚪 Log Out
+          </li>
+
         </ul>
       </div>
 
       <div className="main-content">
         <h1>GH Tire House - Admin Panel</h1>
 
-        <div className="filter-bar">
-          <label>Filter by status:</label>
+        <div className="filter-bar" style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+          <label>Filter by Status:</label>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="Todos">Todos</option>
-            <option value="Label no disponible">Label not available</option>
-            <option value="Label disponible">Label available</option>
-            <option value="Envio pendiente">Envio pendiente</option>
-            <option value="Label pendiente">Label pendiente</option>
-            <option value="Listo para recojida">Listo para recojida</option>
-            <option value="Cancelado - Llanta no disponible">Cancelado - Llanta no disponible</option>
-            <option value="Recojido">Recojido</option>
-            <option value="Orden cancelado">Orden Cancelado Por Gun Hill</option>
+            <option value="All">All</option>
+            <option value="Label Available">Label Available</option>
+            <option value="Label Not Available">Label Not Available</option>
+            <option value="Shipping Pending">Shipping Pending</option>
+            <option value="Ready for Pickup">Ready for Pickup</option>
+            <option value="Picked Up">Picked Up</option>
+            <option value="Cancelled - Tire Not Available">Cancelled - Tire Not Available</option>
+            <option value="Order Cancelled by Gun Hill">Order Cancelled by Gun Hill</option>
           </select>
+          <input type="text" placeholder="Search Order #" value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} style={{ padding: "5px", fontSize: "14px", borderRadius: "4px", border: "1px solid #ccc" }} />
         </div>
+
+        
 
         <table>
           <thead>
@@ -371,7 +421,7 @@ const ordenarPorFecha = (lista) => {
                   </span>
                 </td>
                 <td>
-                  <textarea
+                  <textarea onDoubleClick={(e) => e.target.rows = 6} onBlur={(e) => e.target.rows = 2}
                     value={order.note}
                     onChange={(e) => handleNoteChange(order.id, e.target.value)}
                     disabled={!editNote[order.id]}
@@ -406,6 +456,8 @@ const ordenarPorFecha = (lista) => {
                 </td>
                 <td>
                   <button onClick={() => handleSendLabels(order)}>Send Labels</button>
+<button onClick={() => setModalLabels(order.labels)}>🖨️ Print Label(s)</button>
+
                 </td>
               </tr>
             ))}
@@ -455,7 +507,30 @@ const ordenarPorFecha = (lista) => {
           </div>
         </div>
       )}
+    
+{modalLabels && (
+  <div className="modal-overlay" onClick={() => setModalLabels(null)}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-header">
+        <span>Print Labels</span>
+        <button onClick={() => setModalLabels(null)}>×</button>
+      </div>
+      <div className="modal-body">
+        {modalLabels.map((label, idx) => (
+          <div key={idx}>
+            <button onClick={() => {
+              const win = window.open();
+              win.document.write('<iframe src="' + label.data + '" frameborder="0" style="width:100%;height:100%;" allowfullscreen></iframe>');
+            }}>
+              Print Label {idx + 1}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
+  </div>
+)}
+</div>
   );
 }
 

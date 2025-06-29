@@ -20,14 +20,12 @@ body {
   }
 }
 
-/* Layout principal */
 .admin-container {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* Sidebar gris claro con letras grandes, negrita y iconos */
 .sidebar {
   width: 250px;
   background-color: #c4c8cc;
@@ -61,45 +59,11 @@ body {
   padding-left: 30px;
 }
 
-.sidebar li:nth-child(1)::before {
-  content: "\1F4E6";
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.sidebar li:nth-child(2)::before {
-  content: "\2699";
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.sidebar li:nth-child(3)::before {
-  content: "\1F4DD";
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.sidebar li:nth-child(4)::before {
-  content: "\1F4CA";
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.sidebar li:nth-child(5)::before {
-  content: "\1F4B5";
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
+.sidebar li:nth-child(1)::before { content: "\1F4E6"; left: 10px; top: 50%; transform: translateY(-50%); position: absolute; }
+.sidebar li:nth-child(2)::before { content: "\2699"; left: 10px; top: 50%; transform: translateY(-50%); position: absolute; }
+.sidebar li:nth-child(3)::before { content: "\1F4DD"; left: 10px; top: 50%; transform: translateY(-50%); position: absolute; }
+.sidebar li:nth-child(4)::before { content: "\1F4CA"; left: 10px; top: 50%; transform: translateY(-50%); position: absolute; }
+.sidebar li:nth-child(5)::before { content: "\1F4B5"; left: 10px; top: 50%; transform: translateY(-50%); position: absolute; }
 
 .sidebar li:hover {
   background-color: #b0b5b8;
@@ -281,7 +245,6 @@ button:hover {
   font-weight: bold;
 }
 
-/* 🌐 Modal de creación de usuario */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -346,7 +309,6 @@ button:hover {
   background-color: #218838;
 }
 
-/* 🎨 ESTILOS PARA BADGES DE TROTTASTATUS */
 .badge {
   display: inline-block;
   padding: 4px 10px;
@@ -358,73 +320,110 @@ button:hover {
   min-width: 120px;
 }
 
-.badge-blue {
-  background-color: #007bff;
-}
+.badge-blue { background-color: #007bff; }
+.badge-green { background-color: #28a745; }
+.badge-red { background-color: #dc3545; }
+.badge-gray { background-color: #6c757d; }
 
-.badge-green {
-  background-color: #28a745;
-}
-
-.badge-red {
-  background-color: #dc3545;
-}
-
-.badge-gray {
-  background-color: #6c757d;
-}
-
-/* ✅ COLORES PARA COMBOBOX GH STATUS */
-.status-blue {
-  background-color: #007bff !important;
-  color: white !important;
+.status-blue, .status-green, .status-red, .status-gray {
   font-weight: bold;
-}
-
-.status-green {
-  background-color: #28a745 !important;
   color: white !important;
-  font-weight: bold;
 }
 
-.status-red {
-  background-color: #dc3545 !important;
-  color: white !important;
-  font-weight: bold;
-}
+.status-blue { background-color: #007bff !important; }
+.status-green { background-color: #28a745 !important; }
+.status-red { background-color: #dc3545 !important; }
+.status-gray { background-color: #6c757d !important; }
 
-.status-gray {
-  background-color: #6c757d !important;
-  color: white !important;
-  font-weight: bold;
-}
-
-/* ✅ COMBOBOX TROTTASTATUS – SOLO APLICA A SELECT CON ESA CLASE */
 select.trotta-status {
   font-weight: bold;
   border-radius: 6px;
   padding: 6px 10px;
-  color: white; /* Texto blanco por defecto */
-}
-
-/* Opciones con fondo personalizado */
-select.trotta-status option[value="Pendiente"] {
-  background-color: #ffc107;
-  color: black;
-}
-
-select.trotta-status option[value="Preparando"] {
-  background-color: #007bff;
   color: white;
 }
 
-select.trotta-status option[value="Enviado"] {
-  background-color: #28a745;
-  color: white;
+select.trotta-status option[value="Pendiente"] { background-color: #ffc107; color: black; }
+select.trotta-status option[value="Preparando"] { background-color: #007bff; color: white; }
+select.trotta-status option[value="Enviado"] { background-color: #28a745; color: white; }
+select.trotta-status option[value="Cancelado"] { background-color: #dc3545; color: white; }
+
+/* ✅ MOBILE SUPPORT: Toggle sidebar */
+.mobile-toggle-btn {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background-color: #c4c8cc;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  z-index: 2000;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #1a1a1a;
 }
 
-select.trotta-status option[value="Cancelado"] {
-  background-color: #dc3545;
-  color: white;
-}
+@media (max-width: 768px) {
+  .mobile-toggle-btn {
+    display: block;
+  }
 
+  .admin-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    height: 100%;
+    z-index: 1500;
+    transition: left 0.3s ease-in-out;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  .main-content {
+    padding: 20px;
+    width: 100%;
+  }
+
+  .content-wrapper {
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar label,
+  .filter-bar select,
+  .filter-bar input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .crear-usuario-box {
+    padding: 16px;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 16px;
+  }
+}

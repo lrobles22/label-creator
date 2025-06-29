@@ -20,14 +20,12 @@ body {
   }
 }
 
-/* Layout principal */
 .admin-container {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* Sidebar gris claro con letras grandes, negrita y iconos */
 .sidebar {
   width: 250px;
   background-color: #c4c8cc;
@@ -68,7 +66,6 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
-
 .sidebar li:nth-child(2)::before {
   content: "\2699";
   position: absolute;
@@ -76,7 +73,6 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
-
 .sidebar li:nth-child(3)::before {
   content: "\1F4DD";
   position: absolute;
@@ -84,7 +80,6 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
-
 .sidebar li:nth-child(4)::before {
   content: "\1F4CA";
   position: absolute;
@@ -92,7 +87,6 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
-
 .sidebar li:nth-child(5)::before {
   content: "\1F4B5";
   position: absolute;
@@ -281,7 +275,6 @@ button:hover {
   font-weight: bold;
 }
 
-/* 🌐 Modal de creación de usuario */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -346,7 +339,6 @@ button:hover {
   background-color: #218838;
 }
 
-/* 🎨 ESTILOS PARA BADGES DE TROTTASTATUS */
 .badge {
   display: inline-block;
   padding: 4px 10px;
@@ -361,45 +353,37 @@ button:hover {
 .badge-blue {
   background-color: #007bff;
 }
-
 .badge-green {
   background-color: #28a745;
 }
-
 .badge-red {
   background-color: #dc3545;
 }
-
 .badge-gray {
   background-color: #6c757d;
 }
 
-/* ✅ COLORES PARA COMBOBOX GH STATUS */
 .status-blue {
   background-color: #007bff !important;
   color: white !important;
   font-weight: bold;
 }
-
 .status-green {
   background-color: #28a745 !important;
   color: white !important;
   font-weight: bold;
 }
-
 .status-red {
   background-color: #dc3545 !important;
   color: white !important;
   font-weight: bold;
 }
-
 .status-gray {
   background-color: #6c757d !important;
   color: white !important;
   font-weight: bold;
 }
 
-/* ✅ COMBOBOX TROTTASTATUS */
 select.trotta-status {
   font-weight: bold;
   border-radius: 6px;
@@ -411,23 +395,19 @@ select.trotta-status option[value="Pendiente"] {
   background-color: #ffc107;
   color: black;
 }
-
 select.trotta-status option[value="Preparando"] {
   background-color: #007bff;
   color: white;
 }
-
 select.trotta-status option[value="Enviado"] {
   background-color: #28a745;
   color: white;
 }
-
 select.trotta-status option[value="Cancelado"] {
   background-color: #dc3545;
   color: white;
 }
 
-/* ✅ RESPONSIVE – SOPORTE PARA MÓVILES */
 @media (max-width: 768px) {
   .admin-container {
     flex-direction: column;
@@ -453,7 +433,7 @@ select.trotta-status option[value="Cancelado"] {
   }
 
   .menu-toggle {
-    display: block;
+    display: block !important;
   }
 
   .main-content {
@@ -494,7 +474,6 @@ select.trotta-status option[value="Cancelado"] {
   }
 }
 
-/* 🔘 Botón hamburguesa para móvil */
 .menu-toggle {
   display: none;
   position: absolute;

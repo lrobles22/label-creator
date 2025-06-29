@@ -216,6 +216,13 @@ const ClientDashboard = () => {
   });
   return (
     <div className="admin-container">
+  <button
+    className="menu-toggle"
+    onClick={() => document.querySelector('.sidebar').classList.toggle('active')}
+  >
+    ☰
+  </button>
+
       <div className="sidebar">
         <h2>📁 My Account</h2>
         <ul>

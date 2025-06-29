@@ -14,6 +14,63 @@ const ClientDashboard = () => {
   const [tempStatus, setTempStatus] = useState({});
   const [modalLabels, setModalLabels] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
+const [uploadSuccess, setUploadSuccess] = useState({});
+  const [uploadError, setUploadError] = useState({});
+
+  const handleInvoiceUpload = async (event, orderId) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fileExt = file.name.split('.').pop();
+    const filePath = `invoice_${orderId}.${fileExt}`;
+
+    const { data: uploadData, error: uploadErrorRes } = await supabase.storage
+      .from('invoices')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadErrorRes) {
+      console.error("❌ Error uploading invoice:", uploadErrorRes.message);
+      setUploadError(prev => ({ ...prev, [orderId]: "Upload failed" }));
+      return;
+    }
+
+    const { data: publicData } = supabase
+      .storage
+      .from('invoices')
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicData?.publicUrl;
+
+    if (!publicUrl) {
+      console.error("❌ Public URL not found after upload.");
+      setUploadError(prev => ({ ...prev, [orderId]: "URL not found" }));
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ invoiceurl: publicUrl })
+      .eq('id', orderId);
+
+    if (updateError) {
+      console.error("❌ Error updating invoice URL in DB:", updateError.message);
+      setUploadError(prev => ({ ...prev, [orderId]: "Failed to save in DB" }));
+      return;
+    }
+
+    setOrders(prev =>
+      prev.map(order =>
+        order.id === orderId ? { ...order, invoiceurl: publicUrl } : order
+      )
+    );
+
+    setUploadSuccess(prev => ({ ...prev, [orderId]: true }));
+    setUploadError(prev => ({ ...prev, [orderId]: "" }));
+
+    setTimeout(() => {
+      setUploadSuccess(prev => ({ ...prev, [orderId]: false }));
+    }, 3000);
+  };
   const modalRef = useRef(null);
   const sidebarRef = useRef(null);
   const dragData = useRef({ isDragging: false, originX: 0, originY: 0, translateX: 0, translateY: 0 });
@@ -57,7 +114,8 @@ const ClientDashboard = () => {
           unitPrice: item.unitPrice ?? 0,
           labelsCount: parseInt(item.labelsCount) || 0,
           labels: parsedLabels,
-          company: item.company || ""
+          company: item.company || "",
+          invoiceurl: item.invoiceurl || ""
         };
       });
 
@@ -165,6 +223,10 @@ const ClientDashboard = () => {
     dragData.current.translateX = newTranslateX;
     dragData.current.translateY = newTranslateY;
   };
+
+  
+
+
   const handleLogout = () => {
     localStorage.removeItem("usuario_cliente");
     window.location.href = "/";
@@ -285,6 +347,7 @@ const ClientDashboard = () => {
                 <th>Quantity</th>
                 <th>Date y Hora</th>
                 <th>Estado Gun Hill</th>
+                <th>Attach Invoice</th>
                 <th>Shipping Status</th>
                 <th>Action</th>
                 <th>Notes</th>
@@ -313,6 +376,34 @@ const ClientDashboard = () => {
                     <td>{quantity}</td>
                     <td>{fechaHora}</td>
                     <td>{renderGhStatusBadge(order.ghStatus)}</td>
+                    <td>
+                      <label style={{
+                        display: "inline-block",
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                        backgroundColor: order.invoiceurl ? "#007bff" : "#dc3545",
+                        color: "#fff",
+                        borderRadius: "4px",
+                        transition: "background-color 0.3s"
+                      }}>
+                        {uploadSuccess[order.id] ? "✅ Uploaded" : "Attach Invoice"}
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={(e) => handleInvoiceUpload(e, order.id)}
+                          style={{ display: "none" }}
+                        />
+                      </label>
+                      {uploadError[order.id] && (
+                        <div style={{ color: "red", fontSize: "0.8rem" }}>{uploadError[order.id]}</div>
+                      )}
+                      {order.invoiceurl && !uploadSuccess[order.id] && (
+                        <div>
+                          <a href={order.invoiceurl} target="_blank" rel="noopener noreferrer">View</a>
+                        </div>
+                      )}
+                    </td>
+
                     <td>
                       <select
                         value={isEditable ? tempStatus[order.id] || "" : order.trottaStatus || ""}

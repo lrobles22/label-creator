@@ -9,15 +9,9 @@ body {
 }
 
 @keyframes vibrantFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .admin-container {
@@ -350,39 +344,23 @@ button:hover {
   min-width: 120px;
 }
 
-.badge-blue {
-  background-color: #007bff;
-}
-.badge-green {
-  background-color: #28a745;
-}
-.badge-red {
-  background-color: #dc3545;
-}
-.badge-gray {
-  background-color: #6c757d;
+.badge-blue { background-color: #007bff; }
+.badge-green { background-color: #28a745; }
+.badge-red { background-color: #dc3545; }
+.badge-gray { background-color: #6c757d; }
+
+.status-blue,
+.status-green,
+.status-red,
+.status-gray {
+  color: white !important;
+  font-weight: bold;
 }
 
-.status-blue {
-  background-color: #007bff !important;
-  color: white !important;
-  font-weight: bold;
-}
-.status-green {
-  background-color: #28a745 !important;
-  color: white !important;
-  font-weight: bold;
-}
-.status-red {
-  background-color: #dc3545 !important;
-  color: white !important;
-  font-weight: bold;
-}
-.status-gray {
-  background-color: #6c757d !important;
-  color: white !important;
-  font-weight: bold;
-}
+.status-blue { background-color: #007bff !important; }
+.status-green { background-color: #28a745 !important; }
+.status-red { background-color: #dc3545 !important; }
+.status-gray { background-color: #6c757d !important; }
 
 select.trotta-status {
   font-weight: bold;
@@ -408,6 +386,7 @@ select.trotta-status option[value="Cancelado"] {
   color: white;
 }
 
+/* ✅ Responsivo: menú lateral y botón móvil */
 @media (max-width: 768px) {
   .admin-container {
     flex-direction: column;
@@ -433,7 +412,18 @@ select.trotta-status option[value="Cancelado"] {
   }
 
   .menu-toggle {
-    display: block !important;
+    display: block;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background-color: #1a1a1a;
+    color: white;
+    font-size: 24px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 1100;
   }
 
   .main-content {
@@ -472,19 +462,4 @@ select.trotta-status option[value="Cancelado"] {
     width: 95%;
     padding: 16px;
   }
-}
-
-.menu-toggle {
-  display: none;
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background-color: #1a1a1a;
-  color: white;
-  font-size: 24px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 1100;
 }

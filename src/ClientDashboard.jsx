@@ -15,6 +15,7 @@ const ClientDashboard = () => {
   const [modalLabels, setModalLabels] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
   const modalRef = useRef(null);
+  const sidebarRef = useRef(null);
   const dragData = useRef({ isDragging: false, originX: 0, originY: 0, translateX: 0, translateY: 0 });
 
   useEffect(() => {
@@ -218,12 +219,16 @@ const ClientDashboard = () => {
     <div className="admin-container">
   <button
     className="menu-toggle"
-    onClick={() => document.querySelector('.sidebar').classList.toggle('active')}
+    onClick={() => {
+      if (sidebarRef.current) {
+        sidebarRef.current.classList.toggle("active");
+      }
+    }}
   >
     ☰
   </button>
 
-      <div className="sidebar">
+      <div className="sidebar" ref={sidebarRef}>
         <h2>📁 My Account</h2>
         <ul>
           <li onClick={() => setFilter("All")}>📦 All</li>

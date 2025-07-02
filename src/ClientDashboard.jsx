@@ -453,10 +453,10 @@ const [uploadSuccess, setUploadSuccess] = useState({});
               <span>Order #{modalOrder.orderNumber}</span>
               <button onClick={() => setModalLabels(null)}>×</button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body" style={{ color: "black", fontWeight: "bold" }}>
               <p><strong>Customer:</strong> {modalOrder.customerName}</p>
               <p><strong>Address:</strong> {modalOrder.address}</p>
-              <p><strong>Product:</strong> {modalOrder.orderDetails}</p>
+              <p><strong>Product:</strong> {modalOrder.orderDetails.replace(/\$[\d,]+(\.\d{2})?/g, "")}</p>
               <p><strong>Date:</strong> {modalOrder.date}</p>
               <p><strong>Time:</strong> {modalOrder.time}</p>
               <p><strong>Gun Hill Status:</strong> {modalOrder.ghStatus}</p>

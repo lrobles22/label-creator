@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BillToPay from './BillToPay';
 import './styles.css';
 import { supabase } from './supabaseClient';
 
@@ -308,7 +309,8 @@ return (
             🚪 Log Out
           </li>
 
-        </ul>
+        
+<li><a href="/bill-to-pay">Bill to Pay</a></li></ul>
       </div>
 
       <div className="main-content">
